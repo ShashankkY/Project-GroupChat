@@ -1,21 +1,17 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
-const sequelize = new Sequelize('signup_db', 'root', 'your_password', {
-  host: 'localhost',
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
   dialect: 'mysql',
 });
 
-const User = sequelize.define('User', {
-  name: DataTypes.STRING,
-  email: DataTypes.STRING,
-  phone: DataTypes.STRING,
-  password: DataTypes.STRING,
-});
+module.exports = sequelize;
 
-sequelize.sync();
 
-const saveUser = async ({ name, email, phone, password }) => {
-  await User.create({ name, email, phone, password });
-};
 
-module.exports = { saveUser };
+// DB_NAME=groupchat_db
+// DB_USER=root
+// DB_PASSWORD=Shashank@12,
+// DB_HOST=localhost
+// PORT=3000

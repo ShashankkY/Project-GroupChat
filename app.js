@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const sequelize = require('./db');
 const authRoutes = require('./routes/authRoutes');
-
+const messageRoutes = require('./routes/messageRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -38,6 +38,7 @@ app.get('/', (req, res) => {
 });
 
 app.use(authRoutes);
+app.use(messageRoutes);
 
 sequelize.sync();
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));

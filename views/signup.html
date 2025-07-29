@@ -87,6 +87,21 @@ body {
   font-weight: bold;
   text-align: center;
 }
+
+.login-link {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #075e54;
+}
+.login-link a {
+  font-weight: bold;
+  color: #128c7e;
+  text-decoration: none;
+}
+.login-link a:hover {
+  text-decoration: underline;
+}
+
 </style>
 <body>
   <div class="signup-container">
@@ -99,6 +114,7 @@ body {
       <button type="submit">Sign Up</button>
     </form>
     <p id="response-msg"></p>
+      <p class="login-link">Already a user? <a href="/login">Login here</a></p>
   </div>
 
   <script src="/signup.js"defer></script>

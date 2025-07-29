@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background-color: #075e54;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .logout-btn {
+      background-color: #ffffff;
+      color: rgb(0, 0, 0);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background-color: #b2b2b2;
+    }
+
+    /* Chat messages */
+    .message-container {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #f4f4f4;
+    }
+
+    .message {
+      background-color: #d9d9d9;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    /* Chat input */
+    .chat-box {
+      background-color: #075e54;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .chat-box input {
+      width: 50%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+    }
+
+    .chat-box button {
+      margin-left: 10px;
+      padding: 10px 16px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      background-color: #b4b4b4;
+      color: rgb(0, 0, 0);
+      cursor: pointer;
+    }
+
+    .chat-box button:hover {
+      background-color: #6b6c6b;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>Privexa</h1>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Chat messages -->
+  <div class="message-container" id="messages"></div>
+
+  <!-- Input -->
+  <div class="chat-box">
+    <input type="text" id="message-input" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script src="/chat.js" defer></script>
+</body>
+</html>

@@ -12,8 +12,32 @@
       background-color: #e5ddd5;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+    }
+
+    .brand-card {
+      background-color: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .brand-card .brand-name {
+      font-size: 32px;
+      font-weight: bold;
+      color: #075e54;
+    }
+
+    .brand-card .slogan {
+      font-size: 14px;
+      color: #444;
+      margin-top: 6px;
     }
 
     .login-container {
@@ -30,7 +54,7 @@
 
     .login-container h2 {
       color: #075e54;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       text-align: center;
     }
 
@@ -50,6 +74,7 @@
       border-radius: 8px;
       font-size: 14px;
       background-color: #f0f0f0;
+      text-align: left;
     }
 
     #login-form input:focus {
@@ -84,15 +109,15 @@
     }
 
     .signup-link {
-      margin-top: 20px;
+      margin-top: 15px;
       font-size: 14px;
       color: #075e54;
     }
 
     .signup-link a {
-      text-decoration: none;
       font-weight: bold;
       color: #128c7e;
+      text-decoration: none;
     }
 
     .signup-link a:hover {
@@ -101,6 +126,14 @@
   </style>
 </head>
 <body>
+
+  <!-- ✅ Brand Card -->
+  <div class="brand-card">
+    <div class="brand-name">Privexa</div>
+    <div class="slogan">Connect. Chat. Collaborate.</div>
+  </div>
+
+  <!-- ✅ Login Card -->
   <div class="login-container">
     <h2>Login</h2>
     <form id="login-form">
@@ -111,6 +144,7 @@
     <p id="response-msg"></p>
     <p class="signup-link">New user? <a href="/signup">Sign up here</a></p>
   </div>
+
   <script src="/login.js" defer></script>
 </body>
 </html>

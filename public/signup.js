@@ -22,6 +22,7 @@ document.getElementById('signup-form').addEventListener('submit', async function
     if (response.status === 201) {
       alert('Successfully signed up');
       // optionally redirect to login
+      window.location.href = '/login'; // ✅ redirect to login
     } else if (response.status === 409) {
       alert('User already exists, Please Login');
     } else {

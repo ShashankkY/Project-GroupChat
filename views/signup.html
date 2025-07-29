@@ -1,109 +1,140 @@
-<!-- public/signup.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign Up</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e5ddd5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* ✅ Branding Card */
+    .brand-card {
+      background-color: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .brand-card .brand-name {
+      font-size: 32px;
+      font-weight: bold;
+      color: #075e54;
+    }
+
+    .brand-card .slogan {
+      font-size: 14px;
+      color: #444;
+      margin-top: 6px;
+    }
+
+    .signup-container {
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .signup-container h2 {
+      color: #075e54;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    #signup-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #signup-form input {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: #f0f0f0;
+      text-align: left;
+    }
+
+    #signup-form input:focus {
+      outline: none;
+      border-color: #2a7746;
+      background-color: #fff;
+    }
+
+    #signup-form button {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px;
+      background-color: #2a7746;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #signup-form button:hover {
+      background-color: #1ebc59;
+    }
+
+    #response-msg {
+      margin-top: 15px;
+      color: #075e54;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .login-link {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #075e54;
+    }
+
+    .login-link a {
+      font-weight: bold;
+      color: #128c7e;
+      text-decoration: none;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-<style>
- /* public/styles.css */
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #e5ddd5;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.signup-container {
-  background-color: #ffffff;
-  padding: 40px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.signup-container h2 {
-  color: #075e54;
-  margin-bottom: 25px;
-  text-align: center;
-}
-
-#signup-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-#signup-form input {
-  width: 100%;
-  max-width: 320px;
-  padding: 12px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
-  background-color: #f0f0f0;
-  text-align: left;
-}
-
-#signup-form input:focus {
-  outline: none;
-  border-color: #2a7746;
-  background-color: #fff;
-}
-
-#signup-form button {
-  width: 100%;
-  max-width: 320px;
-  padding: 12px;
-  background-color: #2a7746;
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#signup-form button:hover {
-  background-color: #1ebc59;
-}
-
-#response-msg {
-  margin-top: 15px;
-  color: #075e54;
-  font-weight: bold;
-  text-align: center;
-}
-
-.login-link {
-  margin-top: 15px;
-  font-size: 14px;
-  color: #075e54;
-}
-.login-link a {
-  font-weight: bold;
-  color: #128c7e;
-  text-decoration: none;
-}
-.login-link a:hover {
-  text-decoration: underline;
-}
-
-</style>
 <body>
+
+  <!-- ✅ Brand Card -->
+  <div class="brand-card">
+    <div class="brand-name">Privexa</div>
+    <div class="slogan">Connect. Chat. Collaborate.</div>
+  </div>
+
+  <!-- ✅ Signup Card -->
   <div class="signup-container">
     <h2>Sign Up</h2>
     <form id="signup-form">
@@ -114,9 +145,9 @@ body {
       <button type="submit">Sign Up</button>
     </form>
     <p id="response-msg"></p>
-      <p class="login-link">Already a user? <a href="/login">Login here</a></p>
+    <p class="login-link">Already a user? <a href="/login">Login here</a></p>
   </div>
 
-  <script src="/signup.js"defer></script>
+  <script src="/signup.js" defer></script>
 </body>
 </html>

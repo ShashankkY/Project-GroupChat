@@ -17,7 +17,8 @@ document.getElementById('login-form').addEventListener('submit', async function 
 
     if (response.status === 200) {
       alert('Login successful!');
-      // redirect to dashboard/home
+      localStorage.setItem('token', data.token);
+      window.location.href = '/chat'; // ✅ redirect to chat UI
     } else {
       alert(data.message || 'Login failed');
     }

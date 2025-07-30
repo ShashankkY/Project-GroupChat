@@ -3,7 +3,7 @@ const router = express.Router();
 const messageController = require('../controllers/messageController');
 const authenticateToken = require('../middleware/auth');
 
-router.post('/messages', authenticateToken, messageController.postMessage);
-router.get('/messages', authenticateToken, messageController.getMessages);
+router.post('/groups/:groupId/messages', authenticateToken, messageController.postMessage);
+router.get('/groups/:groupId/messages', authenticateToken, messageController.getGroupMessages);
 
 module.exports = router;

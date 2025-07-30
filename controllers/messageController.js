@@ -5,43 +5,42 @@ const { Op } = require('sequelize');
 // ✅ POST /messages
 exports.postMessage = async (req, res) => {
   try {
-    const userId = req.user.userId;
     const { content } = req.body;
+    const { groupId } = req.params;
 
-    if (!content) {
-      return res.status(400).json({ message: 'Message content is required' });
-    }
+    // Check if user is in group
+    const isMember = await GroupUser.findOne({
+      where: { userId: req.user.userId, groupId }
+    });
+
+    if (!isMember) return res.status(403).json({ message: 'Not a group member' });
 
     const message = await Message.create({
       content,
-      UserId: userId
+      UserId: req.user.userId,
+      GroupId: groupId
     });
 
-    res.status(201).json({
-      id: message.id,
-      content: message.content,
-      sender: req.user.name,
-      time: message.createdAt
-    });
+    res.status(201).json({ message: 'Message sent', data: message });
   } catch (err) {
-    res.status(500).json({
-      message: 'Failed to post message',
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 };
 
-// ✅ GET /messages?after=ID
-exports.getMessages = async (req, res) => {
+exports.getGroupMessages = async (req, res) => {
   try {
-    const afterId = parseInt(req.query.after || 0, 10);
+    const { groupId } = req.params;
+
+    const isMember = await GroupUser.findOne({
+      where: { userId: req.user.userId, groupId }
+    });
+
+    if (!isMember) return res.status(403).json({ message: 'Not a group member' });
 
     const messages = await Message.findAll({
-      where: {
-        id: { [Op.gt]: afterId }
-      },
+      where: { GroupId: groupId },
       include: [{ model: User, attributes: ['name'] }],
-      order: [['id', 'ASC']]
+      order: [['createdAt', 'ASC']]
     });
 
     const formatted = messages.map(msg => ({
@@ -53,9 +52,7 @@ exports.getMessages = async (req, res) => {
 
     res.status(200).json({ messages: formatted });
   } catch (err) {
-    res.status(500).json({
-      message: 'Could not fetch messages',
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 };
+

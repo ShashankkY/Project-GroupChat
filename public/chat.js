@@ -1,40 +1,83 @@
 const input = document.getElementById('message-input');
 const messageBox = document.getElementById('messages');
 const sendButton = document.querySelector('.chat-box button');
-
+const groupListEl = document.getElementById('group-list');
+const groupTitle = document.getElementById('current-group');
 const LOCAL_STORAGE_KEY = 'chatMessages';
 const MAX_MESSAGES = 10;
 
+let socket;
+let currentGroupId = localStorage.getItem('activeGroupId');
+
 window.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/login';
-    return;
+  if (!token) return window.location.href = '/login';
+
+  socket = io('http://localhost:3001');
+
+  if (currentGroupId) {
+    joinGroup(currentGroupId);
   }
 
-  const socket = io('http://localhost:3001');
-  const localMessages = loadMessagesFromLocalStorage();
-
-  renderMessages(localMessages);
-
-  fetchNewMessages(localMessages.at(-1)?.id || 0);
-
-  setupEventListeners(socket);
+  loadGroups();
+  setupEventListeners();
 });
+
+function getCurrentUsername() {
+  const token = localStorage.getItem('token');
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  return payload.name;
+}
+
+// ------------------------ GROUP SIDEBAR ------------------------
+
+function loadGroups() {
+  const token = localStorage.getItem('token');
+
+  fetch('http://localhost:3001/groups', {
+    headers: { Authorization: 'Bearer ' + token }
+  })
+    .then(res => res.json())
+    .then(data => {
+      groupListEl.innerHTML = '';
+      data.groups.forEach(group => {
+        const li = document.createElement('li');
+        li.textContent = group.name;
+        li.onclick = () => joinGroup(group.id, group.name);
+        groupListEl.appendChild(li);
+      });
+    });
+}
+
+function joinGroup(groupId, groupName) {
+  if (currentGroupId) socket.emit('leave-group', currentGroupId);
+
+  currentGroupId = groupId;
+  localStorage.setItem('activeGroupId', groupId);
+
+  if (groupName) groupTitle.textContent = groupName;
+
+  socket.emit('join-group', groupId);
+
+  fetchNewMessages(0); // Always load full latest 10 from backend
+}
+
+// ------------------------ MESSAGE HANDLING ------------------------
 
 function loadMessagesFromLocalStorage() {
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || [];
+    const all = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
+    return all[currentGroupId] || [];
   } catch (e) {
     return [];
   }
 }
 
 function saveMessagesToLocalStorage(messages) {
-  let existing = loadMessagesFromLocalStorage();
-  const combined = [...existing, ...messages];
-  const recentOnly = combined.slice(-MAX_MESSAGES);
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(recentOnly));
+  const all = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
+  const recentOnly = messages.slice(-MAX_MESSAGES);
+  all[currentGroupId] = recentOnly;
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(all));
 }
 
 function renderMessages(messages) {
@@ -54,49 +97,42 @@ function renderMessages(messages) {
   messageBox.scrollTop = messageBox.scrollHeight;
 }
 
-function getCurrentUsername() {
-  const token = localStorage.getItem('token');
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  return payload.name;
-}
-
 function fetchNewMessages(afterId = 0) {
   const token = localStorage.getItem('token');
+  if (!currentGroupId) return;
 
-  fetch(`http://localhost:3001/messages?after=${afterId}`, {
-    headers: {
-      'Authorization': 'Bearer ' + token
-    }
+  fetch(`http://localhost:3001/groups/${currentGroupId}/messages?after=${afterId}`, {
+    headers: { Authorization: 'Bearer ' + token }
   })
     .then(res => {
       if (!res.ok) {
-        if (res.status === 401) {
-          logout();
-        }
+        if (res.status === 401) logout();
         throw new Error('Failed to fetch messages');
       }
       return res.json();
     })
     .then(data => {
       if (data && data.messages.length) {
-        saveMessagesToLocalStorage(data.messages);
-        renderMessages(loadMessagesFromLocalStorage());
+        const combined = [...loadMessagesFromLocalStorage(), ...data.messages];
+        const latest = combined.slice(-MAX_MESSAGES);
+        saveMessagesToLocalStorage(latest);
+        renderMessages(latest);
       }
     })
     .catch(err => {
-      console.error('Error fetching messages:', err);
+      console.error('Fetch error:', err);
       messageBox.innerHTML = '<div class="message" style="color: red;">Failed to load messages. Please refresh.</div>';
     });
 }
 
-function sendMessage(socket) {
+function sendMessage() {
   const msg = input.value.trim();
-  if (!msg) return;
+  if (!msg || !currentGroupId) return;
 
   const token = localStorage.getItem('token');
   const sender = getCurrentUsername();
 
-  fetch('http://localhost:3001/messages', {
+  fetch(`http://localhost:3001/groups/${currentGroupId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -112,34 +148,33 @@ function sendMessage(socket) {
       return res.json();
     })
     .then(data => {
-      const messageObj = { id: data.id, content: msg, sender };
+      const messageObj = { id: data.id, content: msg, sender, groupId: currentGroupId };
       socket.emit('send-message', messageObj);
 
       const updated = [...loadMessagesFromLocalStorage(), messageObj].slice(-MAX_MESSAGES);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      saveMessagesToLocalStorage(updated);
       renderMessages(updated);
     })
-    .catch(err => console.error('Send message error:', err));
+    .catch(err => console.error('Send error:', err));
 
   input.value = '';
   input.focus();
 }
 
-function setupEventListeners(socket) {
+function setupEventListeners() {
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      sendMessage(socket);
+      sendMessage();
     }
   });
 
-  sendButton.addEventListener('click', () => {
-    sendMessage(socket);
-  });
+  sendButton.addEventListener('click', () => sendMessage());
 
   socket.on('receive-message', msg => {
+    if (msg.groupId !== currentGroupId) return;
     const updated = [...loadMessagesFromLocalStorage(), msg].slice(-MAX_MESSAGES);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    saveMessagesToLocalStorage(updated);
     renderMessages(updated);
   });
 }

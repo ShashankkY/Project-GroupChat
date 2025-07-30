@@ -18,15 +18,12 @@ const sequelize = new Sequelize(
   }
 );
 
-// Test database connection
-sequelize.authenticate()
-  .then(() => {
-    console.log('✅ Database connection established successfully.');
-  })
-  .catch(err => {
-    console.error('❌ Unable to connect to the database:', err);
-  });
-
+// Optional: test connection only in development
+if (process.env.NODE_ENV !== 'production') {
+  sequelize.authenticate()
+    .then(() => console.log('✅ Database connected successfully.'))
+    .catch(err => console.error('❌ Database connection failed:', err));
+}
 module.exports = sequelize;
 
 

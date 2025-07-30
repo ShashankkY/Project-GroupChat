@@ -11,6 +11,11 @@ const Message = sequelize.define('Message', {
   content: {
     type: DataTypes.TEXT,
     allowNull: false
+  },
+  // Inside your Message model definition
+  groupId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
   }
 });
 

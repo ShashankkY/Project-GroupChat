@@ -2,25 +2,41 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 const sequelize = require('./db');
 const authRoutes = require('./routes/authRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const errorHandler = require('./middleware/errorHandler');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:5500', 'http://localhost:3001', 'http://localhost:3000'], // Allow all local ports
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }
+});
+
+const PORT = process.env.PORT || 3001;
 
 // ✅ CORs configuration
 app.use(cors({
-  origin: 'http://localhost:5500', // Live server port
-  methods: ['POST', 'GET'],
+  origin: ['http://localhost:5500', 'http://localhost:3001', 'http://localhost:3000'],
+  methods: ['POST', 'GET', 'OPTIONS'],
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Routes to serve pages
+// ✅ Serve frontend pages
 app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'signup.html'));
 });
@@ -33,12 +49,59 @@ app.get('/chat', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'chat.html'));
 });
 
+// Add a route to check authentication status
+app.get('/api/check-auth', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ authenticated: true, user: decoded });
+  } catch (err) {
+    res.status(401).json({ authenticated: false });
+  }
+});
+
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
+// ✅ Routes
 app.use(authRoutes);
 app.use(messageRoutes);
 
-sequelize.sync();
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// ✅ Error handling middleware (must be last)
+app.use(errorHandler);
+
+// ✅ Socket.IO handling
+io.on('connection', (socket) => {
+  console.log('🟢 New client connected');
+
+  socket.on('send-message', (msg) => {
+    // Broadcast to all clients except sender
+    // Ensure we're sending the correct format
+    const messageData = {
+      sender: msg.sender || 'Unknown',
+      content: msg.content || msg
+    };
+    socket.broadcast.emit('receive-message', messageData);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔴 Client disconnected');
+  });
+});
+
+// ✅ Sync DB and start server
+sequelize.sync()
+  .then(() => {
+    console.log('✅ Database synchronized successfully.');
+    server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ Database sync failed:', err);
+    process.exit(1);
+  });

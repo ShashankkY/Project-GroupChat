@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat App</title>
+  <title>GroupChat</title>
   <style>
     body {
       margin: 0;
@@ -50,48 +50,104 @@
     }
 
     .message {
-      background-color: #d9d9d9;
       margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 6px;
+      padding: 10px 15px;
+      border-radius: 18px;
+      max-width: 70%;
+      word-wrap: break-word;
+      position: relative;
+    }
+
+    .message.sent {
+  background: #dcf8c6; /* WhatsApp-like green */
+  color: #000;
+  margin-left: auto;
+  text-align: right;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 5px;
+  border-bottom-left-radius: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message.received {
+  background: #fff;
+  color: #000;
+  margin-right: auto;
+  text-align: left;
+  border-top-right-radius: 18px;
+  border-top-left-radius: 5px;
+  border-bottom-right-radius: 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e1e1e1;
+}
+
+
+    .message .sender {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 4px;
+      opacity: 0.8;
+    }
+
+    .message .content {
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     /* Chat input */
     .chat-box {
       background-color: #075e54;
-      padding: 10px;
+      padding: 15px 20px;
       display: flex;
-      justify-content: center;
+      align-items: center;
+      gap: 12px;
     }
 
     .chat-box input {
-      width: 50%;
-      padding: 10px;
+      flex: 1;
+      min-width: 0;
+      padding: 12px 16px;
       font-size: 16px;
-      border-radius: 10px;
+      border-radius: 25px;
       border: none;
+      outline: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .chat-box input:focus {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transform: translateY(-1px);
     }
 
     .chat-box button {
-      margin-left: 10px;
-      padding: 10px 16px;
+      padding: 12px 16px;
       font-size: 16px;
-      border-radius: 10px;
+      border-radius: 50%;
       border: none;
-      background-color: #b4b4b4;
-      color: rgb(0, 0, 0);
+      background-color: #25d366;
+      color: white;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .chat-box button:hover {
-      background-color: #6b6c6b;
+      background-color: #128c7e;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
   <!-- Header -->
   <div class="header">
-    <h1>Privexa</h1>
+    <h1>GroupChat</h1>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
@@ -101,9 +157,19 @@
   <!-- Input -->
   <div class="chat-box">
     <input type="text" id="message-input" placeholder="Type a message..." />
-    <button onclick="sendMessage()">Send</button>
+    <button type="submit">➤</button>
   </div>
-
+  <!-- Add to your chat.html -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="/chat.js" defer></script>
+  
+  <script>
+    // Focus input on page load
+    const messageInput = document.getElementById('message-input');
+    
+    window.addEventListener('load', () => {
+      messageInput.focus();
+    });
+  </script>
 </body>
 </html>

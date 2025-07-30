@@ -3,11 +3,8 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 exports.postMessage = async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    const userId = req.user.userId;
     const { content } = req.body;
 
     if (!content) {
@@ -22,7 +19,7 @@ exports.postMessage = async (req, res) => {
     res.status(201).json({ message: 'Message stored', data: message });
 
   } catch (err) {
-    res.status(401).json({ message: 'Unauthorized', error: err.message });
+    res.status(500).json({ message: 'Failed to post message', error: err.message });
   }
 };
 

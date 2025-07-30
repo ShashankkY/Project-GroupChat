@@ -1,7 +1,8 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 
+// ✅ POST /messages
 exports.postMessage = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -16,18 +17,31 @@ exports.postMessage = async (req, res) => {
       UserId: userId
     });
 
-    res.status(201).json({ message: 'Message stored', data: message });
-
+    res.status(201).json({
+      id: message.id,
+      content: message.content,
+      sender: req.user.name,
+      time: message.createdAt
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to post message', error: err.message });
+    res.status(500).json({
+      message: 'Failed to post message',
+      error: err.message
+    });
   }
 };
 
+// ✅ GET /messages?after=ID
 exports.getMessages = async (req, res) => {
   try {
+    const afterId = parseInt(req.query.after || 0, 10);
+
     const messages = await Message.findAll({
+      where: {
+        id: { [Op.gt]: afterId }
+      },
       include: [{ model: User, attributes: ['name'] }],
-      order: [['createdAt', 'ASC']]
+      order: [['id', 'ASC']]
     });
 
     const formatted = messages.map(msg => ({
@@ -39,6 +53,9 @@ exports.getMessages = async (req, res) => {
 
     res.status(200).json({ messages: formatted });
   } catch (err) {
-    res.status(500).json({ message: 'Could not fetch messages', error: err.message });
+    res.status(500).json({
+      message: 'Could not fetch messages',
+      error: err.message
+    });
   }
 };

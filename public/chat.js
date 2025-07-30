@@ -2,72 +2,68 @@ const input = document.getElementById('message-input');
 const messageBox = document.getElementById('messages');
 const sendButton = document.querySelector('.chat-box button');
 
-// ✅ Check authentication first
+const LOCAL_STORAGE_KEY = 'chatMessages';
+const MAX_MESSAGES = 10;
+
 window.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/login';
     return;
   }
-  
-  // Connect to Socket.IO server
+
   const socket = io('http://localhost:3001');
-  
-  // Fetch all old messages on page load
-  fetchMessages();
-  
-  // Setup event listeners
+  const localMessages = loadMessagesFromLocalStorage();
+
+  renderMessages(localMessages);
+
+  fetchNewMessages(localMessages.at(-1)?.id || 0);
+
   setupEventListeners(socket);
 });
 
-function setupEventListeners(socket) {
-  // Handle Enter key to send message
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      sendMessage(socket);
-    }
-  });
-
-  // Handle send button click
-  sendButton.addEventListener('click', () => {
-    sendMessage(socket);
-  });
-
-  // Listen for messages from other users
-  socket.on('receive-message', msg => {
-    const div = document.createElement('div');
-    div.className = 'message received';
-    
-    // Handle different message formats
-    let senderName = 'Unknown';
-    let content = '';
-    
-    if (typeof msg === 'string') {
-      content = msg;
-    } else if (msg && msg.sender && msg.content) {
-      senderName = msg.sender;
-      content = msg.content;
-    } else if (msg && msg.content) {
-      content = msg.content;
-    } else {
-      content = 'Unknown message format';
-    }
-    
-    div.innerHTML = `
-      <div class="sender">${senderName}</div>
-      <div class="content">${content}</div>
-    `;
-    
-    messageBox.appendChild(div);
-    messageBox.scrollTop = messageBox.scrollHeight;
-  });
+function loadMessagesFromLocalStorage() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
 }
 
-function fetchMessages() {
+function saveMessagesToLocalStorage(messages) {
+  let existing = loadMessagesFromLocalStorage();
+  const combined = [...existing, ...messages];
+  const recentOnly = combined.slice(-MAX_MESSAGES);
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(recentOnly));
+}
+
+function renderMessages(messages) {
+  messageBox.innerHTML = '';
+  const currentUser = getCurrentUsername();
+
+  messages.forEach(msg => {
+    const div = document.createElement('div');
+    div.className = 'message ' + (msg.sender === currentUser ? 'sent' : 'received');
+    div.innerHTML = `
+      <div class="sender">${msg.sender === currentUser ? 'You' : msg.sender}</div>
+      <div class="content">${msg.content}</div>
+    `;
+    messageBox.appendChild(div);
+  });
+
+  messageBox.scrollTop = messageBox.scrollHeight;
+}
+
+function getCurrentUsername() {
   const token = localStorage.getItem('token');
-  
-  fetch('http://localhost:3001/messages', {
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  return payload.name;
+}
+
+function fetchNewMessages(afterId = 0) {
+  const token = localStorage.getItem('token');
+
+  fetch(`http://localhost:3001/messages?after=${afterId}`, {
     headers: {
       'Authorization': 'Bearer ' + token
     }
@@ -75,49 +71,21 @@ function fetchMessages() {
     .then(res => {
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return;
+          logout();
         }
         throw new Error('Failed to fetch messages');
       }
       return res.json();
     })
     .then(data => {
-      if (!data) return;
-      
-      messageBox.innerHTML = '';
-
-      data.messages.forEach(msg => {
-        const div = document.createElement('div');
-        
-        // Check if this message is from the current user
-        const tokenData = JSON.parse(atob(token.split('.')[1]));
-        const currentUserName = tokenData.name;
-        
-        if (msg.sender === currentUserName) {
-          div.className = 'message sent';
-          div.innerHTML = `
-            <div class="sender">You</div>
-            <div class="content">${msg.content}</div>
-          `;
-        } else {
-          div.className = 'message received';
-          div.innerHTML = `
-            <div class="sender">${msg.sender}</div>
-            <div class="content">${msg.content}</div>
-          `;
-        }
-        
-        messageBox.appendChild(div);
-      });
-      
-      // Scroll to bottom after loading messages
-      messageBox.scrollTop = messageBox.scrollHeight;
+      if (data && data.messages.length) {
+        saveMessagesToLocalStorage(data.messages);
+        renderMessages(loadMessagesFromLocalStorage());
+      }
     })
     .catch(err => {
       console.error('Error fetching messages:', err);
-      messageBox.innerHTML = '<div class="message" style="color: red;">Error loading messages. Please refresh the page.</div>';
+      messageBox.innerHTML = '<div class="message" style="color: red;">Failed to load messages. Please refresh.</div>';
     });
 }
 
@@ -126,16 +94,8 @@ function sendMessage(socket) {
   if (!msg) return;
 
   const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/login';
-    return;
-  }
+  const sender = getCurrentUsername();
 
-  // Get user info from token
-  const tokenData = JSON.parse(atob(token.split('.')[1]));
-  const senderName = tokenData.name;
-
-  // ✅ Save to DB
   fetch('http://localhost:3001/messages', {
     method: 'POST',
     headers: {
@@ -143,39 +103,49 @@ function sendMessage(socket) {
       'Authorization': 'Bearer ' + token
     },
     body: JSON.stringify({ content: msg })
-  }).then(response => {
-    if (response.ok) {
-      // ✅ Emit to other users after DB save
-      socket.emit('send-message', { 
-        content: msg,
-        sender: senderName
-      });
-    } else if (response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-  }).catch(err => {
-    console.error('Error sending message:', err);
-  });
+  })
+    .then(res => {
+      if (!res.ok) {
+        if (res.status === 401) logout();
+        throw new Error('Message not sent');
+      }
+      return res.json();
+    })
+    .then(data => {
+      const messageObj = { id: data.id, content: msg, sender };
+      socket.emit('send-message', messageObj);
 
-  // ✅ Show your own message immediately
-  const div = document.createElement('div');
-  div.className = 'message sent';
-  div.innerHTML = `
-    <div class="sender">You</div>
-    <div class="content">${msg}</div>
-  `;
-  messageBox.appendChild(div);
-  messageBox.scrollTop = messageBox.scrollHeight;
+      const updated = [...loadMessagesFromLocalStorage(), messageObj].slice(-MAX_MESSAGES);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      renderMessages(updated);
+    })
+    .catch(err => console.error('Send message error:', err));
+
   input.value = '';
-  
-  // Focus back to input after sending
   input.focus();
 }
 
-// ✅ Logout button handler
-function logout() {
-  localStorage.removeItem('token');
-  window.location.href = '/login';
+function setupEventListeners(socket) {
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendMessage(socket);
+    }
+  });
+
+  sendButton.addEventListener('click', () => {
+    sendMessage(socket);
+  });
+
+  socket.on('receive-message', msg => {
+    const updated = [...loadMessagesFromLocalStorage(), msg].slice(-MAX_MESSAGES);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    renderMessages(updated);
+  });
 }
 
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
+  window.location.href = '/login';
+}

@@ -78,20 +78,31 @@ app.use(errorHandler);
 
 // ✅ Socket.IO handling
 io.on('connection', (socket) => {
-  console.log('🟢 New client connected');
+  console.log('🟢 New client connected:', socket.id);
 
+  // Join group (room)
+  socket.on('join-group', (groupId) => {
+    const roomName = `group-${groupId}`;
+    socket.join(roomName);
+    console.log(`✅ Socket ${socket.id} joined ${roomName}`);
+  });
+
+  // Leave group
+  socket.on('leave-group', (groupId) => {
+    const roomName = `group-${groupId}`;
+    socket.leave(roomName);
+    console.log(`🚪 Socket ${socket.id} left ${roomName}`);
+  });
+
+  // Handle message sending within group
   socket.on('send-message', (msg) => {
-    // Broadcast to all clients except sender
-    // Ensure we're sending the correct format
-    const messageData = {
-      sender: msg.sender || 'Unknown',
-      content: msg.content || msg
-    };
-    socket.broadcast.emit('receive-message', messageData);
+    const roomName = `group-${msg.groupId}`;
+    console.log(`📩 Message to ${roomName}:`, msg);
+    socket.to(roomName).emit('receive-message', msg);
   });
 
   socket.on('disconnect', () => {
-    console.log('🔴 Client disconnected');
+    console.log('🔴 Client disconnected:', socket.id);
   });
 });
 
